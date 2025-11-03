@@ -32,3 +32,6 @@ argparse = { name = "caveful_games/argparse", version = "^0.1.2", target = "lune
 [engines]
 pesde = "^0.7.0"
 lune = "^0.10.2"
+
+[dependencies]
+pathfs = { name = "jiwonz/pathfs", version = "^0.6.0" }

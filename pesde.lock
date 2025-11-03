@@ -2,8 +2,8 @@
 # It is not intended for manual editing.
 format = 2
 name = "rvy/rir3"
-version = "0.1.0"
-target = "roblox"
+version = "0.0.1"
+target = "lune"
 
 [graph."0x5eal/unzip@0.2.0 luau".pkg_ref]
 ref_ty = "pesde"
@@ -58,6 +58,9 @@ index_url = "https://github.com/pesde-pkg/index"
 
 [graph."jiwonz/luau_path@0.2.0 luau".pkg_ref.dependencies]
 luau_disk = [{ name = "jiwonz/luau_disk", version = "^0.2.0", index = "https://github.com/pesde-pkg/index" }, "standard"]
+
+[graph."jiwonz/pathfs@0.6.0 lune"]
+direct = ["pathfs", { name = "jiwonz/pathfs", version = "^0.6.0", index = "default" }, "standard"]
 
 [graph."jiwonz/pathfs@0.6.0 lune".dependencies]
 greentea = ["jiwonz/greentea_luau@0.2.0 luau", "standard"]
@@ -141,22 +144,22 @@ option = [{ name = "lukadev_0/option", version = "^1.2.1", index = "https://gith
 result = [{ name = "lukadev_0/result", version = "^1.2.1", index = "https://github.com/pesde-pkg/index" }, "standard"]
 toolchainlib = [{ name = "pesde/toolchainlib", version = "^0.2.0", index = "https://github.com/pesde-pkg/index", target = "lune" }, "standard"]
 
-[graph."pesde/stylua@2.3.0 lune"]
+[graph."pesde/stylua@2.3.1 lune"]
 direct = ["stylua", { name = "pesde/stylua", version = "^2.3.0", index = "default", target = "lune" }, "dev"]
 
-[graph."pesde/stylua@2.3.0 lune".dependencies]
+[graph."pesde/stylua@2.3.1 lune".dependencies]
 option = ["lukadev_0/option@1.2.1 lune", "standard"]
 result = ["lukadev_0/result@1.2.1 lune", "standard"]
 toolchainlib = ["pesde/toolchainlib@0.2.1 lune", "standard"]
 
-[graph."pesde/stylua@2.3.0 lune".pkg_ref]
+[graph."pesde/stylua@2.3.1 lune".pkg_ref]
 ref_ty = "pesde"
 index_url = "https://github.com/pesde-pkg/index"
 
-[graph."pesde/stylua@2.3.0 lune".pkg_ref.dependencies]
+[graph."pesde/stylua@2.3.1 lune".pkg_ref.dependencies]
 option = [{ name = "lukadev_0/option", version = "^1.2.1", index = "https://github.com/pesde-pkg/index" }, "standard"]
 result = [{ name = "lukadev_0/result", version = "^1.2.1", index = "https://github.com/pesde-pkg/index" }, "standard"]
-toolchainlib = [{ name = "pesde/toolchainlib", version = "^0.2.0", index = "https://github.com/pesde-pkg/index", target = "lune" }, "standard"]
+toolchainlib = [{ name = "pesde/toolchainlib", version = "^0.2.1", index = "https://github.com/pesde-pkg/index", target = "lune" }, "standard"]
 
 [graph."pesde/toolchainlib@0.2.1 lune".dependencies]
 dirs = ["jiwonz/dirs@0.6.0 lune", "standard"]
