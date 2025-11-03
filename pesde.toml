@@ -1,11 +1,17 @@
 name = "rvy/rir3"
-version = "0.1.0"
+version = "0.0.0"
 description = "sync studio output to cli and also allow studio code execution from cli"
 authors = ["rvy"]
 license = "MIT"
+includes = [
+  "pesde.toml",
+  "README.md",
+  "LICENSE",
+  "src/**/*.luau",
+]
 
 [target]
-environment = "roblox"
+environment = "lune"
 bin = "src"
 
 [indices]
