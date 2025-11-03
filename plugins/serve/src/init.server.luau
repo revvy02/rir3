@@ -90,7 +90,7 @@ local function executeScript(script: string, executionId: string)
 		event:Fire()
 	end
 
-	task.wait(0.5)
+	task.wait(0.1)
 
 	sendMessage("done", currentExecutionId)
 	currentExecutionId = nil
