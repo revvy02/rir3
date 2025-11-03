@@ -12,17 +12,14 @@ local uuid = require("../utils/uuid")
 type Config = {
 	script: string,
 	port: number,
-	timeout: number,
 }
 
 local DEFAULT_PORT = 34872
-local DEFAULT_TIMEOUT = 300 -- 5 minutes
 
 local function parseArguments(args: any): Config
 	return {
 		script = args.script,
 		port = args.port or DEFAULT_PORT,
-		timeout = args.timeout or DEFAULT_TIMEOUT,
 	}
 end
 
@@ -54,12 +51,11 @@ local function identifyClient(ws: any)
 	}))
 end
 
-local function submitScript(ws: any, executionId: string, script: string, timeout: number)
+local function submitScript(ws: any, executionId: string, script: string)
 	ws:send(serde.encode("json", {
 		type = "submit",
 		script = script,
 		executionId = executionId,
-		timeout = timeout,
 	}))
 end
 
@@ -74,10 +70,6 @@ local function handleMessage(decoded: any, exitCodeRef: { value: number }): bool
 			exitCodeRef.value = 1
 		end
 	elseif decoded.type == "done" then
-		return true
-	elseif decoded.type == "timeout" then
-		output.printError("Execution timed out")
-		exitCodeRef.value = 2
 		return true
 	elseif decoded.type == "disconnect" then
 		output.printError("Studio disconnected")
@@ -103,7 +95,7 @@ local function main(args: any)
 
 	local ws = connectToServer(config.port)
 	identifyClient(ws)
-	submitScript(ws, executionId, scriptContent, config.timeout)
+	submitScript(ws, executionId, scriptContent)
 
 	while true do
 		local message = ws:next()

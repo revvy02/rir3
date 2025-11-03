@@ -16,7 +16,6 @@ type QueueItem = {
 	executionId: string,
 	script: string,
 	queuedAt: number,
-	timeout: number,
 }
 
 type State = {
@@ -25,7 +24,6 @@ type State = {
 	execClients: { [string]: any },
 	queue: { QueueItem },
 	activeExecutionId: string?,
-	timeoutTasks: { [string]: thread },
 }
 
 local DEFAULT_PORT = 34872
@@ -36,7 +34,6 @@ local state: State = {
 	execClients = {},
 	queue = {},
 	activeExecutionId = nil,
-	timeoutTasks = {},
 }
 
 local function parseArguments(args: any): Config
@@ -49,14 +46,6 @@ local function safeSend(ws: any, data: string)
 	pcall(function()
 		ws:send(data)
 	end)
-end
-
-local function cancelTimeout(executionId: string)
-	local timeoutTask = state.timeoutTasks[executionId]
-	if timeoutTask then
-		task.cancel(timeoutTask)
-		state.timeoutTasks[executionId] = nil
-	end
 end
 
 local function processQueue()
@@ -99,42 +88,17 @@ local function notifyExecClient(executionId: string, messageType: string)
 	end)
 end
 
-local function removeFromQueue(executionId: string)
-	for i, item in state.queue do
-		if item.executionId == executionId then
-			table.remove(state.queue, i)
-			return
-		end
-	end
-end
-
 local function cleanupExecution(executionId: string)
 	state.execClients[executionId] = nil
-	cancelTimeout(executionId)
 end
 
-local function handleTimeout(executionId: string)
-	stdio.write(`[serve] Execution timed out: {executionId}\n`)
-
-	notifyExecClient(executionId, "timeout")
-	removeFromQueue(executionId)
-
-	if state.activeExecutionId == executionId then
-		state.activeExecutionId = nil
-		processQueue()
-	end
-
-	cleanupExecution(executionId)
-end
-
-local function queueExecution(ws: any, executionId: string, script: string, timeoutSeconds: number)
+local function queueExecution(ws: any, executionId: string, script: string)
 	state.execClients[executionId] = ws
 
 	table.insert(state.queue, {
 		executionId = executionId,
 		script = script,
 		queuedAt = os.time(),
-		timeout = timeoutSeconds,
 	} :: QueueItem)
 
 	safeSend(
@@ -147,10 +111,6 @@ local function queueExecution(ws: any, executionId: string, script: string, time
 	)
 
 	stdio.write(`[serve] Queued execution: {executionId} (position {#state.queue})\n`)
-
-	state.timeoutTasks[executionId] = task.delay(timeoutSeconds, function()
-		handleTimeout(executionId)
-	end)
 
 	processQueue()
 end
@@ -168,9 +128,8 @@ local function handleExecClient(ws: any)
 
 		if decoded.type == "submit" then
 			clientExecutionId = decoded.executionId
-			local timeoutSeconds = decoded.timeout or 300
 
-			queueExecution(ws, clientExecutionId, decoded.script, timeoutSeconds)
+			queueExecution(ws, clientExecutionId, decoded.script)
 		end
 	end
 
@@ -183,7 +142,6 @@ local function completeExecution(executionId: string)
 	stdio.write(`[serve] Execution complete: {executionId}\n`)
 
 	state.activeExecutionId = nil
-	cancelTimeout(executionId)
 	table.remove(state.queue, 1)
 
 	processQueue()
