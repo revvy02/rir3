@@ -10,7 +10,7 @@ local function main(_args: any)
 	output.printColored(`Building serve plugin...`, COLORS.Info)
 
 	local pluginPath = `{roblox.studioPluginPath()}/rir3-serve.rbxmx`
-	local rojoProjectPath = _G.PESDE_ROOT .. "/plugins/serve/default.project.json"
+	local rojoProjectPath = _G.PESDE_ROOT .. "/plugins/serve/plugin.project.json"
 
 	local success = pcall(function()
 		plugin.generatePluginFile(pluginPath, rojoProjectPath)

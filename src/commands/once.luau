@@ -113,7 +113,7 @@ local function main(args: any)
 	local scriptContent = fs.readFile(config.script)
 	local executionId = uuid.generate()
 	local pluginPath = `{roblox.studioPluginPath()}/rir3-once.rbxmx`
-	local rojoProjectPath = _G.PESDE_ROOT .. "/plugins/once/default.project.json"
+	local rojoProjectPath = _G.PESDE_ROOT .. "/plugins/once/plugin.project.json"
 
 	local placeToOpen = config.place
 	local tempPlacePath = nil
