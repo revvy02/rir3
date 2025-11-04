@@ -17,7 +17,6 @@ local constants = require("../utils/constants")
 type Config = {
 	script: string,
 	place: string?,
-	port: number,
 	ignorePattern: { string },
 }
 
@@ -39,7 +38,6 @@ local function parseArguments(args: any): Config
 	return {
 		script = args.script,
 		place = args.place,
-		port = args.port or constants.DEFAULT_PORT,
 		ignorePattern = args["ignore-pattern"] or args["ignore_pattern"] or {},
 	}
 end
@@ -135,7 +133,7 @@ local function main(args: any)
 	local isComplete = false
 
 	-- Start WebSocket server BEFORE launching Studio
-	local server = net.serve(config.port, {
+	local server = net.serve(constants.ONCE_PORT, {
 		handleWebSocket = function(ws)
 			isComplete = handlePluginConnection(ws, executionId, scriptContent, config.ignorePattern or {}, exitCodeRef)
 		end,

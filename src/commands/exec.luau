@@ -12,13 +12,11 @@ local constants = require("../utils/constants")
 
 type Config = {
 	script: string,
-	port: number,
 }
 
 local function parseArguments(args: any): Config
 	return {
 		script = args.script,
-		port = args.port or constants.DEFAULT_PORT,
 	}
 end
 
@@ -83,8 +81,8 @@ local function main(args: any)
 	local config = parseArguments(args)
 	validateConfig(config)
 
-	if not checkServerHealth(config.port) then
-		output.printError(`No rir3 server found on port {config.port}. Run 'rir3 serve' first.`)
+	if not checkServerHealth(constants.SERVE_PORT) then
+		output.printError(`No rir3 server found on port {constants.SERVE_PORT}. Run 'rir3 serve' first.`)
 		process.exit(1)
 	end
 
@@ -92,7 +90,7 @@ local function main(args: any)
 	local executionId = uuid.generate()
 	local exitCodeRef = { value = 0 }
 
-	local ws = connectToServer(config.port)
+	local ws = connectToServer(constants.SERVE_PORT)
 	identifyClient(ws)
 	submitScript(ws, executionId, scriptContent)
 

@@ -9,10 +9,6 @@ local COLORS = require("../utils/colors")
 local output = require("../utils/output")
 local constants = require("../utils/constants")
 
-type Config = {
-	port: number,
-}
-
 type QueueItem = {
 	executionId: string,
 	script: string,
@@ -34,12 +30,6 @@ local state: State = {
 	queue = {},
 	activeExecutionId = nil,
 }
-
-local function parseArguments(args: any): Config
-	return {
-		port = args.port or constants.DEFAULT_PORT,
-	}
-end
 
 local function safeSend(ws: any, data: string)
 	pcall(function()
@@ -186,13 +176,11 @@ local function handleStudioClient(ws: any)
 	handleStudioDisconnect()
 end
 
-local function main(args: any)
-	local config = parseArguments(args)
-
-	output.printColored(`Starting server on port {config.port}`, COLORS.Info)
+local function main(_args: any)
+	output.printColored(`Starting server on port {constants.SERVE_PORT}`, COLORS.Info)
 	output.printColored(`Waiting for Studio plugin to connect...`, COLORS.Info)
 
-	local _server = net.serve(config.port, {
+	local _server = net.serve(constants.SERVE_PORT, {
 		handleRequest = function(request)
 			if request.path == "/health" then
 				return {

@@ -2,7 +2,7 @@ local constants = require(script.constants)
 local HttpService = game:GetService("HttpService")
 local LogService = game:GetService("LogService")
 
-local SERVER_URL = `ws://localhost:{constants.DEFAULT_PORT}`
+local SERVER_URL = `ws://localhost:{constants.ONCE_PORT}`
 
 local client = HttpService:CreateWebStreamClient(Enum.WebStreamClientType.WebSocket, {
 	Url = SERVER_URL,
@@ -68,7 +68,7 @@ client.MessageReceived:Connect(function(message)
 
         local success, result = xpcall(require(moduleScript), debug.traceback)
         moduleScript:Destroy()
-        
+
 		if not success then
 			local event = Instance.new("BindableEvent")
 			event.Event:Connect(function()

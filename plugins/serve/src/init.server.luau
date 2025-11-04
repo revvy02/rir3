@@ -2,7 +2,7 @@ local constants = require(script.constants)
 local HttpService = game:GetService("HttpService")
 local LogService = game:GetService("LogService")
 
-local SERVER_URL = `ws://localhost:{constants.DEFAULT_PORT}`
+local SERVER_URL = `ws://localhost:{constants.SERVE_PORT}`
 
 local client = nil
 local isConnected = false
