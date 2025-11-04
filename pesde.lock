@@ -2,7 +2,7 @@
 # It is not intended for manual editing.
 format = 2
 name = "rvy/rir3"
-version = "0.0.4-rc.2"
+version = "0.0.4-rc.4"
 target = "lune"
 
 [graph."0x5eal/unzip@0.2.0 luau".pkg_ref]
@@ -17,7 +17,7 @@ luau-lsp = [{ name = "pesde/luau_lsp", version = "=1.53.2", index = "https://git
 stylua = [{ name = "pesde/stylua", version = "=2.1.0", index = "https://github.com/pesde-pkg/index", target = "lune" }, "dev"]
 
 [graph."caveful_games/argparse@0.1.2 lune"]
-direct = ["argparse", { name = "caveful_games/argparse", version = "^0.1.2", index = "default", target = "lune" }, "dev"]
+direct = ["argparse", { name = "caveful_games/argparse", version = "^0.1.2", index = "default", target = "lune" }, "standard"]
 
 [graph."caveful_games/argparse@0.1.2 lune".pkg_ref]
 ref_ty = "pesde"

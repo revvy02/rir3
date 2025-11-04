@@ -12,6 +12,7 @@ local function main(_args: any)
 	local pluginPath = `{roblox.studioPluginPath()}/rir3-serve.rbxmx`
 	local rojoProjectPath = _G.PESDE_ROOT .. "/plugins/serve/plugin.project.json"
 
+    -- print(rojoProjectPath)
 	local success = pcall(function()
 		plugin.generatePluginFile(pluginPath, rojoProjectPath)
 	end)
