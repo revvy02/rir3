@@ -109,7 +109,6 @@ local function connect()
 		client.Opened:Connect(function()
 			isConnected = true
 			retryDelay = 2
-			print("[rir3] Connected to serve server")
 
 			safeSend(HttpService:JSONEncode({
 				clientType = "studio",
@@ -118,7 +117,6 @@ local function connect()
 
 		client.Closed:Connect(function()
 			isConnected = false
-			print("[rir3] Disconnected from serve server")
 
 			if not isRetrying then
 				isRetrying = true
@@ -163,5 +161,3 @@ connect()
 plugin.Unloading:Connect(function()
 	cleanupConnection()
 end)
-
-print("[rir3] Persistent plugin loaded, connecting to serve server...")

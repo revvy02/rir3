@@ -1,5 +1,3 @@
--- Serve command: Persistent WebSocket server routing exec requests to Studio
-
 local net = require("@lune/net")
 local serde = require("@lune/serde")
 local stdio = require("@lune/stdio")
@@ -15,74 +13,130 @@ type QueueItem = {
 	queuedAt: number,
 }
 
-type State = {
-	studioWs: any?,
-	studioConnected: boolean,
-	execClients: { [string]: any },
-	queue: { QueueItem },
+export type StudioConnection = {
+	ws: any,
+	connected: boolean,
 	activeExecutionId: string?,
+
+	new: (ws: any) -> StudioConnection,
+	send: (self: StudioConnection, data: string) -> (),
+	close: (self: StudioConnection) -> (),
+	isConnected: (self: StudioConnection) -> boolean,
 }
 
-local state: State = {
-	studioWs = nil,
-	studioConnected = false,
-	execClients = {},
-	queue = {},
-	activeExecutionId = nil,
+export type ExecConnection = {
+	ws: any,
+	executionId: string,
+
+	new: (ws: any, executionId: string) -> ExecConnection,
+	send: (self: ExecConnection, data: string) -> (),
+	close: (self: ExecConnection) -> (),
 }
 
-local function safeSend(ws: any, data: string)
+type State = {
+	studioConnection: StudioConnection?,
+	execConnections: { [string]: ExecConnection },
+	queue: { QueueItem },
+}
+
+local StudioConnectionClass = {}
+StudioConnectionClass.__index = StudioConnectionClass
+
+function StudioConnectionClass.new(ws: any): StudioConnection
+	local self = setmetatable({}, StudioConnectionClass)
+	self.ws = ws
+	self.connected = true
+	self.activeExecutionId = nil
+	return (self :: any) :: StudioConnection
+end
+
+function StudioConnectionClass:send(data: string)
 	pcall(function()
-		ws:send(data)
+		self.ws:send(data)
 	end)
 end
 
+function StudioConnectionClass:close()
+	self.connected = false
+	pcall(function()
+		self.ws:close()
+	end)
+end
+
+function StudioConnectionClass:isConnected(): boolean
+	return self.connected
+end
+
+local ExecConnectionClass = {}
+ExecConnectionClass.__index = ExecConnectionClass
+
+function ExecConnectionClass.new(ws: any, executionId: string): ExecConnection
+	local self = setmetatable({}, ExecConnectionClass)
+	self.ws = ws
+	self.executionId = executionId
+	return (self :: any) :: ExecConnection
+end
+
+function ExecConnectionClass:send(data: string)
+	pcall(function()
+		self.ws:send(data)
+	end)
+end
+
+function ExecConnectionClass:close()
+	pcall(function()
+		self.ws:close()
+	end)
+end
+
+local state: State = {
+	studioConnection = nil,
+	execConnections = {},
+	queue = {},
+}
+
 local function processQueue()
-	if not state.studioConnected or state.activeExecutionId or #state.queue == 0 then
+	if not state.studioConnection or not state.studioConnection:isConnected() then
+		return
+	end
+
+	if state.studioConnection.activeExecutionId or #state.queue == 0 then
 		return
 	end
 
 	local item = state.queue[1]
-	state.activeExecutionId = item.executionId
+	state.studioConnection.activeExecutionId = item.executionId
 
 	stdio.write(`[serve] Starting execution: {item.executionId}\n`)
 
-	-- Send to Studio
-	safeSend(
-		state.studioWs,
-		serde.encode("json", {
-			type = "exec",
-			executionId = item.executionId,
-			script = item.script,
-		})
-	)
+	state.studioConnection:send(serde.encode("json", {
+		type = "exec",
+		executionId = item.executionId,
+		script = item.script,
+	}))
 end
 
 local function notifyExecClient(executionId: string, messageType: string)
-	local execClient = state.execClients[executionId]
-	if not execClient then
+	local execConnection = state.execConnections[executionId]
+	if not execConnection then
 		return
 	end
 
-	safeSend(
-		execClient,
-		serde.encode("json", {
-			type = messageType,
-			executionId = executionId,
-		})
-	)
+	execConnection:send(serde.encode("json", {
+		type = messageType,
+		executionId = executionId,
+	}))
 
-	pcall(function()
-		execClient:close()
-	end)
+	execConnection:close()
 end
 
 local function cleanupExecution(executionId: string)
-	state.execClients[executionId] = nil
+	state.execConnections[executionId] = nil
 end
 
-local function queueExecution(ws: any, executionId: string, script: string)
-	state.execClients[executionId] = ws
+local function queueExecution(execConnection: ExecConnection, script: string)
+	local executionId = execConnection.executionId
+	state.execConnections[executionId] = execConnection
 
 	table.insert(state.queue, {
 		executionId = executionId,
@@ -90,14 +144,11 @@ local function queueExecution(ws: any, executionId: string, script: string)
 		queuedAt = os.time(),
 	} :: QueueItem)
 
-	safeSend(
-		ws,
-		serde.encode("json", {
-			type = "queued",
-			executionId = executionId,
-			position = #state.queue,
-		})
-	)
+	execConnection:send(serde.encode("json", {
+		type = "queued",
+		executionId = executionId,
+		position = #state.queue,
+	}))
 
 	stdio.write(`[serve] Queued execution: {executionId} (position {#state.queue})\n`)
 
@@ -117,8 +168,8 @@ local function handleExecClient(ws: any)
 
 		if decoded.type == "submit" then
 			clientExecutionId = decoded.executionId
-
-			queueExecution(ws, clientExecutionId, decoded.script)
+			local execConnection = ExecConnectionClass.new(ws, clientExecutionId)
+			queueExecution(execConnection, decoded.script)
 		end
 	end
 
@@ -130,27 +181,40 @@ end
 local function completeExecution(executionId: string)
 	stdio.write(`[serve] Execution complete: {executionId}\n`)
 
-	state.activeExecutionId = nil
+	if state.studioConnection then
+		state.studioConnection.activeExecutionId = nil
+	end
 	table.remove(state.queue, 1)
 
 	processQueue()
 end
 
-local function handleStudioDisconnect()
+local function handleStudioDisconnect(studioConnection: StudioConnection)
 	stdio.write(`[serve] Studio plugin disconnected\n`)
 
-	state.studioConnected = false
-	state.studioWs = nil
+	studioConnection:close()
+	state.studioConnection = nil
 
-	if state.activeExecutionId then
-		notifyExecClient(state.activeExecutionId, "disconnect")
-		state.activeExecutionId = nil
+	if studioConnection.activeExecutionId then
+		notifyExecClient(studioConnection.activeExecutionId, "disconnect")
 	end
 end
 
 local function handleStudioClient(ws: any)
-	state.studioWs = ws
-	state.studioConnected = true
+	if state.studioConnection and state.studioConnection:isConnected() then
+		stdio.write(`[serve] Rejected connection: Studio already connected\n`)
+		pcall(function()
+			ws:send(serde.encode("json", {
+				type = "error",
+				message = "Another Studio instance is already connected to this server"
+			}))
+			ws:close()
+		end)
+		return
+	end
+
+	local studioConnection = StudioConnectionClass.new(ws)
+	state.studioConnection = studioConnection
 	stdio.write(`[serve] Studio plugin connected\n`)
 
 	processQueue()
@@ -163,9 +227,9 @@ local function handleStudioClient(ws: any)
 
 		local decoded = serde.decode("json", message)
 
-		local execClient = state.execClients[decoded.executionId]
-		if execClient then
-			safeSend(execClient, message)
+		local execConnection = state.execConnections[decoded.executionId]
+		if execConnection then
+			execConnection:send(message)
 		end
 
 		if decoded.type == "done" then
@@ -173,7 +237,7 @@ local function handleStudioClient(ws: any)
 		end
 	end
 
-	handleStudioDisconnect()
+	handleStudioDisconnect(studioConnection)
 end
 
 local function main(_args: any)
@@ -183,15 +247,18 @@ local function main(_args: any)
 	local _server = net.serve(constants.SERVE_PORT, {
 		handleRequest = function(request)
 			if request.path == "/health" then
+				local studioConnected = state.studioConnection ~= nil and state.studioConnection:isConnected()
+				local activeExecution = if state.studioConnection then state.studioConnection.activeExecutionId else nil
+
 				return {
 					status = 200,
 					headers = {
 						["Content-Type"] = "application/json",
 					},
 					body = serde.encode("json", {
-						studioConnected = state.studioConnected,
+						studioConnected = studioConnected,
 						queueLength = #state.queue,
-						activeExecution = state.activeExecutionId,
+						activeExecution = activeExecution,
 					}),
 				}
 			end
