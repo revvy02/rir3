@@ -9,3 +9,5 @@ end
 
 warn("This is a warning")
 print("Test complete!")
+
+return 2

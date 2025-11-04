@@ -77,8 +77,10 @@ local function executeScript(script: string, executionId: string)
 	local moduleScript = Instance.new("ModuleScript")
 	moduleScript.Source = script .. "\nif true then return true end"
 
-	-- stylua: ignore
-	local success, result = (xpcall :: any)(require, debug.traceback, moduleScript)
+    local moduleScript = Instance.new("ModuleScript")
+	moduleScript.Source = "return function() " .. script .. "\nend"
+
+    local success, result = xpcall(require(moduleScript), debug.traceback)
 	moduleScript:Destroy()
 
 	if not success then

@@ -61,12 +61,14 @@ client.MessageReceived:Connect(function(message)
 			}))
 		end)
 
+		-- Wrap the code in a function to ensure it always returns something
+		-- Put the function() on the same line as the first line of code with a semicolon to preserve line numbers
 		local moduleScript = Instance.new("ModuleScript")
-		moduleScript.Source = decoded.script .. "\nif true then return true end"
+		moduleScript.Source = "return function() " .. decoded.script .. "\nend"
 
-		local success, result = xpcall(require, debug.traceback, moduleScript)
-		moduleScript:Destroy()
-
+        local success, result = xpcall(require(moduleScript), debug.traceback)
+        moduleScript:Destroy()
+        
 		if not success then
 			local event = Instance.new("BindableEvent")
 			event.Event:Connect(function()
