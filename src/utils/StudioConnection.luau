@@ -4,8 +4,10 @@ export type StudioConnection = {
 	ws: any,
 	connected: boolean,
 	activeExecutionId: string?,
+	bitset: number,
+	connectedAt: number,
 
-	new: (ws: any) -> StudioConnection,
+	new: (ws: any, bitset: number) -> StudioConnection,
 	send: (self: StudioConnection, data: string) -> (),
 	close: (self: StudioConnection) -> (),
 	isConnected: (self: StudioConnection) -> boolean,
@@ -14,11 +16,13 @@ export type StudioConnection = {
 local StudioConnection = {}
 StudioConnection.__index = StudioConnection
 
-function StudioConnection.new(ws: any): StudioConnection
+function StudioConnection.new(ws: any, bitset: number): StudioConnection
 	local self = setmetatable({}, StudioConnection)
 	self.ws = ws
 	self.connected = true
 	self.activeExecutionId = nil
+	self.bitset = bitset
+	self.connectedAt = os.time()
 	return (self :: any) :: StudioConnection
 end
 

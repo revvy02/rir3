@@ -1,3 +1,12 @@
+# assumes studio = 1, client = 1
+rir3 exec --studio --client
+
+# explicit
+rir3 exec --studio 1 --client 1
+
+# can also do 0 if you then want to match the opposite
+rir3 exec --studio 1 --client 0 --runmode 0
+
 # rir3
 
 Execute Luau code inside Roblox Studio and see output in your terminal.

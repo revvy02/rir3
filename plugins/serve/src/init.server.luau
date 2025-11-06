@@ -2,6 +2,7 @@ local constants = require(script.constants)
 local utils = require(script.utils)
 local HttpService = game:GetService("HttpService")
 local LogService = game:GetService("LogService")
+local RunService = game:GetService("RunService")
 
 local SERVER_URL = `ws://localhost:{constants.SERVE_PORT}`
 
@@ -19,6 +20,28 @@ local LOG_TYPE_TO_LEVEL = {
 	[Enum.MessageType.MessageWarning] = "Warning",
 	[Enum.MessageType.MessageError] = "Error",
 }
+
+local function getContextBitset(): number
+	local bitset = 0
+
+	if RunService:IsRunning() then
+		bitset = bit32.bor(bitset, bit32.lshift(1, constants.CONTEXT_BITS.isRunning))
+	end
+	if RunService:IsEdit() then
+		bitset = bit32.bor(bitset, bit32.lshift(1, constants.CONTEXT_BITS.isEdit))
+	end
+	if RunService:IsServer() then
+		bitset = bit32.bor(bitset, bit32.lshift(1, constants.CONTEXT_BITS.isServer))
+	end
+	if RunService:IsClient() then
+		bitset = bit32.bor(bitset, bit32.lshift(1, constants.CONTEXT_BITS.isClient))
+	end
+	if RunService:IsStudio() then
+		bitset = bit32.bor(bitset, bit32.lshift(1, constants.CONTEXT_BITS.isStudio))
+	end
+
+	return bitset
+end
 
 local function safeSend(data: string)
 	if not client then
@@ -98,6 +121,7 @@ local function connect()
 
 			safeSend(HttpService:JSONEncode({
 				clientType = "studio",
+				contextBitset = getContextBitset(),
 			}))
 		end)
 

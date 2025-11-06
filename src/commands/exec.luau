@@ -14,12 +14,47 @@ local sourcemap = require("../utils/sourcemap")
 type Config = {
 	script: string,
 	sourcemap: string?,
+	filterBits: number,
+	filterMask: number,
 }
 
+local function parseContextFlags(args: any): (number, number)
+	local filterBits = 0
+	local filterMask = 0
+
+	local contextMap = {
+		studio = constants.CONTEXT_BITS.isStudio,
+		client = constants.CONTEXT_BITS.isClient,
+		server = constants.CONTEXT_BITS.isServer,
+		edit = constants.CONTEXT_BITS.isEdit,
+		running = constants.CONTEXT_BITS.isRunning,
+	}
+
+	for flagName, bitPos in pairs(contextMap) do
+		local value = args[flagName]
+		if value ~= nil then
+			local bitMask = bit32.lshift(1, bitPos)
+			filterMask = bit32.bor(filterMask, bitMask)
+
+			if value == 1 then
+				filterBits = bit32.bor(filterBits, bitMask)
+			elseif value == 0 then
+				filterBits = bit32.band(filterBits, bit32.bnot(bitMask))
+			end
+		end
+	end
+
+	return filterBits, filterMask
+end
+
 local function parseArguments(args: any): Config
+	local filterBits, filterMask = parseContextFlags(args)
+
 	return {
 		script = args.script,
 		sourcemap = args.sourcemap,
+		filterBits = filterBits,
+		filterMask = filterMask,
 	}
 end
 
@@ -51,11 +86,20 @@ local function identifyClient(ws: any)
 	}))
 end
 
-local function submitScript(ws: any, executionId: string, script: string, instancePath: string?)
+local function submitScript(
+	ws: any,
+	executionId: string,
+	script: string,
+	instancePath: string?,
+	filterBits: number,
+	filterMask: number
+)
 	local message: any = {
 		type = "submit",
 		script = script,
 		executionId = executionId,
+		filterBits = filterBits,
+		filterMask = filterMask,
 	}
 
 	if instancePath then
@@ -67,8 +111,10 @@ end
 
 local function handleMessage(decoded: any, exitCodeRef: { value: number }): boolean
 	if decoded.type == "queued" then
-		if decoded.position and decoded.position > 1 then
-			-- output.printColored(`Queued at position {decoded.position}`, COLORS.Info)
+		if decoded.waiting then
+			output.printColored(`Waiting: {decoded.waiting}`, COLORS.Info)
+		elseif decoded.matches then
+			-- Queued successfully to matching studios
 		end
 	elseif decoded.type == "output" then
 		output.printColored(decoded.body, COLORS[decoded.level] or COLORS.Print)
@@ -116,7 +162,7 @@ local function main(args: any)
 
 	local ws = connectToServer(constants.SERVE_PORT)
 	identifyClient(ws)
-	submitScript(ws, executionId, scriptContent, instancePath)
+	submitScript(ws, executionId, scriptContent, instancePath, config.filterBits, config.filterMask)
 
 	while true do
 		local message = ws:next()
