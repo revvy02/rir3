@@ -103,7 +103,7 @@ function VmPipeline:enqueue(exec: ExecConnection)
 		position = #self.execQueue,
 	}))
 
-	stdio.write(`Queued execution: {output.formatShortLog(self.studioId, self.bitset, exec.executionId)} (position {#self.execQueue})\n`)
+	stdio.write(`Queued execution: {output.formatShortLog(self.studioId, self.bitset, exec.executionId)}\n`)
 
 	-- Try to process immediately
 	processQueue(self)
