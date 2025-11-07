@@ -5,7 +5,6 @@ export type ExecConnection = {
 	instancePath: string?,
 	filterBits: number,
 	filterMask: number,
-	assignedStudio: string?,
 	queuedAt: number,
 
 	new: (ws: any, executionId: string, script: string, instancePath: string?, filterBits: number, filterMask: number) -> ExecConnection,
@@ -16,14 +15,7 @@ export type ExecConnection = {
 local ExecConnection = {}
 ExecConnection.__index = ExecConnection
 
-function ExecConnection.new(
-	ws: any,
-	executionId: string,
-	script: string,
-	instancePath: string?,
-	filterBits: number,
-	filterMask: number
-): ExecConnection
+function ExecConnection.new(ws: any, executionId: string, script: string, instancePath: string?, filterBits: number, filterMask: number): ExecConnection
 	local self = setmetatable({}, ExecConnection)
 	self.ws = ws
 	self.executionId = executionId
@@ -31,7 +23,6 @@ function ExecConnection.new(
 	self.instancePath = instancePath
 	self.filterBits = filterBits
 	self.filterMask = filterMask
-	self.assignedStudio = nil
 	self.queuedAt = os.time()
 	return (self :: any) :: ExecConnection
 end

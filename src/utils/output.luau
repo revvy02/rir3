@@ -1,8 +1,8 @@
 -- Output utilities for colored terminal printing
 
-local stdio = require("@lune/stdio")
 local COLORS = require("./colors")
 local constants = require("./constants")
+local stdio = require("@lune/stdio")
 
 local function printColored(message: string, color: string?)
 	if color then

@@ -28,6 +28,9 @@ local function main()
 	-- Define build command
 	parser:command("build", "Build and install the serve plugin")
 
+	-- Define status command
+	parser:command("status", "Check if rir3 serve is running")
+
 	local args = parser:parse()
 
 	-- Router: check which command was invoked and call it with parsed args
@@ -44,6 +47,9 @@ local function main()
 	elseif args.build then
 		local buildCommand = require("@self/commands/build")
 		buildCommand(args)
+	elseif args.status then
+		local statusCommand = require("@self/commands/status")
+		statusCommand(args)
 	end
 end
 

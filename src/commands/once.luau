@@ -1,19 +1,19 @@
 -- Once command: One-off script execution in Studio
 
+local fs = require("@lune/fs")
 local net = require("@lune/net")
 local process = require("@lune/process")
-local fs = require("@lune/fs")
+local roblox = require("@lune/roblox")
 local serde = require("@lune/serde")
 local stdio = require("@lune/stdio")
 local task = require("@lune/task")
-local roblox = require("@lune/roblox")
 
 local COLORS = require("../utils/colors")
-local output = require("../utils/output")
-local uuid = require("../utils/uuid")
-local plugin = require("../utils/plugin")
 local constants = require("../utils/constants")
+local output = require("../utils/output")
+local plugin = require("../utils/plugin")
 local sourcemap = require("../utils/sourcemap")
+local uuid = require("../utils/uuid")
 
 type Config = {
 	script: string,
@@ -63,14 +63,7 @@ local function validateConfig(config: Config)
 	end
 end
 
-local function handlePluginConnection(
-	ws: any,
-	executionId: string,
-	scriptContent: string,
-	instancePath: string?,
-	ignorePatterns: { string },
-	exitCodeRef: { value: number }
-): boolean
+local function handlePluginConnection(ws: any, executionId: string, scriptContent: string, instancePath: string?, ignorePatterns: { string }, exitCodeRef: { value: number }): boolean
 	local message: any = {
 		type = "exec",
 		executionId = executionId,

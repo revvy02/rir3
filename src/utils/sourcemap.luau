@@ -30,9 +30,7 @@ local function findInstancePath(sourcemap: any, filePath: string): string?
 
 		if node.children then
 			for _, child in node.children do
-				local childPath = if currentPath == "game"
-					then `game["{child.name}"]`
-					else `{currentPath}["{child.name}"]`
+				local childPath = if currentPath == "game" then `game["{child.name}"]` else `{currentPath}["{child.name}"]`
 
 				local found = searchNode(child, childPath)
 				if found then

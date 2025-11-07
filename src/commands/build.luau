@@ -1,13 +1,12 @@
 local process = require("@lune/process")
 local roblox = require("@lune/roblox")
 
-local output = require("../utils/output")
 local COLORS = require("../utils/colors")
-local plugin = require("../utils/plugin")
+local output = require("../utils/output")
 local pathfs = require("@pkg/pathfs")
+local plugin = require("../utils/plugin")
 
 local function main(_args: any)
-
 	output.printColored(`Building serve plugin...`, COLORS.Info)
 
 	local pluginPath = `{roblox.studioPluginPath()}/rir3-serve.rbxmx`

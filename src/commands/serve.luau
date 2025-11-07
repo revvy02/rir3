@@ -6,9 +6,9 @@ local stdio = require("@lune/stdio")
 local task = require("@lune/task")
 
 local COLORS = require("../utils/colors")
-local VmPipeline = require("../utils/VmPipeline")
 local ExecConnection = require("../utils/ExecConnection")
 local StudioConnection = require("../utils/StudioConnection")
+local VmPipeline = require("../utils/VmPipeline")
 local constants = require("../utils/constants")
 local output = require("../utils/output")
 
@@ -76,6 +76,15 @@ local function cleanupEmptyPipelines()
 			pipelines[bitset] = nil
 		end
 	end
+end
+
+local function removePipelineFromMap(bitset: number, studioId: string)
+	-- Remove from pipeline map
+	if pipelines[bitset] then
+		pipelines[bitset][studioId] = nil
+	end
+
+	cleanupEmptyPipelines()
 end
 
 local function processPendingExecutions()
@@ -202,12 +211,7 @@ local function handleStudioClient(ws: any, vmBitset: number)
 	-- Handle disconnect
 	vmPipeline:disconnect()
 
-	-- Remove from pipeline map
-	if pipelines[vmBitset] then
-		pipelines[vmBitset][studioId] = nil
-	end
-
-	cleanupEmptyPipelines()
+	removePipelineFromMap(vmBitset, studioId)
 end
 
 local function main(_args: any)
@@ -216,76 +220,76 @@ local function main(_args: any)
 
 	local _server = net.serve(constants.SERVE_PORT, {
 		handleRequest = function(request)
-		if request.path == "/health" then
-			local contextStatus = {}
-			local totalVms = 0
-			local totalQueued = 0
+			if request.path == "/health" then
+				local contextStatus = {}
+				local totalVms = 0
+				local totalQueued = 0
 
-			for bitset, vmMap in pairs(pipelines) do
-				local vms = {}
-				local contextQueued = 0
+				for bitset, vmMap in pairs(pipelines) do
+					local vms = {}
+					local contextQueued = 0
 
-				for studioId, vmPipeline in pairs(vmMap) do
-					local queueLength = vmPipeline:getQueueLength()
-					table.insert(vms, {
-						studioId = studioId,
-						queueLength = queueLength,
-						isIdle = vmPipeline:isIdle(),
+					for studioId, vmPipeline in pairs(vmMap) do
+						local queueLength = vmPipeline:getQueueLength()
+						table.insert(vms, {
+							studioId = studioId,
+							queueLength = queueLength,
+							isIdle = vmPipeline:isIdle(),
+						})
+						contextQueued = contextQueued + queueLength
+						totalVms = totalVms + 1
+					end
+
+					table.insert(contextStatus, {
+						bitset = bitset,
+						vmCount = #vms,
+						totalQueued = contextQueued,
+						vms = vms,
 					})
-					contextQueued = contextQueued + queueLength
-					totalVms = totalVms + 1
+					totalQueued = totalQueued + contextQueued
 				end
 
-				table.insert(contextStatus, {
-					bitset = bitset,
-					vmCount = #vms,
-					totalQueued = contextQueued,
-					vms = vms,
-				})
-				totalQueued = totalQueued + contextQueued
+				return {
+					status = 200,
+					headers = {
+						["Content-Type"] = "application/json",
+					},
+					body = serde.encode("json", {
+						contextCount = #contextStatus,
+						totalVms = totalVms,
+						totalQueued = totalQueued,
+						contexts = contextStatus,
+					}),
+				}
 			end
 
 			return {
-				status = 200,
-				headers = {
-					["Content-Type"] = "application/json",
-				},
-				body = serde.encode("json", {
-					contextCount = #contextStatus,
-					totalVms = totalVms,
-					totalQueued = totalQueued,
-					contexts = contextStatus,
-				}),
+				status = 404,
+				body = "Not Found",
 			}
-		end
-
-		return {
-			status = 404,
-			body = "Not Found",
-		}
 		end,
 
 		handleWebSocket = function(socket)
-		local firstMessage = socket:next()
-		if not firstMessage then
-			socket:close()
-			return
-		end
+			local firstMessage = socket:next()
+			if not firstMessage then
+				socket:close()
+				return
+			end
 
-		local success, decoded = pcall(serde.decode, "json", firstMessage)
-		if not success or not decoded.clientType then
-			socket:close()
-			return
-		end
+			local success, decoded = pcall(serde.decode, "json", firstMessage)
+			if not success or not decoded.clientType then
+				socket:close()
+				return
+			end
 
-		if decoded.clientType == "studio" then
-			local vmBitset = decoded.contextBitset or 0
-			handleStudioClient(socket, vmBitset)
-		elseif decoded.clientType == "exec" then
-			handleExecClient(socket)
-		else
-			socket:close()
-		end
+			if decoded.clientType == "studio" then
+				local vmBitset = decoded.contextBitset or 0
+				handleStudioClient(socket, vmBitset)
+			elseif decoded.clientType == "exec" then
+				handleExecClient(socket)
+			else
+				socket:close()
+			end
 		end,
 	})
 

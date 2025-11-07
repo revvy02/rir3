@@ -1,81 +1,86 @@
-# assumes studio = 1, client = 1
-rir3 exec --studio --client
-
-# explicit
-rir3 exec --studio 1 --client 1
-
-# can also do 0 if you then want to match the opposite
-rir3 exec --studio 1 --client 0 --runmode 0
-
 # rir3
 
-Execute Luau code inside Roblox Studio and see output in your terminal.
+Execute Luau scripts in Roblox Studio from your terminal.
 
 ## Overview
 
-Run scripts in Roblox Studio from your command line. All Studio output (prints, warnings, errors) appears in your terminal with color coding. Uses WebSockets to communicate between the CLI and Studio.
+Run scripts in Roblox Studio and see output in your terminal with color-coded prints, warnings, and errors. Uses WebSockets for communication between CLI and Studio.
 
 ## Usage
 
-### Once Mode (One-off execution)
+### Once Mode
 
-Execute a script once without any setup. Studio opens temporarily and closes after execution.
+Execute a script one time. Studio opens temporarily and closes after execution.
 
 ```bash
-# Basic execution with temporary module
-rir3 once path/to/script.luau
+# Basic execution
+rir3 once script.luau
 
-# Open a specific place file
-rir3 once path/to/script.luau --place path/to/place.rbxl
+# With place file
+rir3 once script.luau --place game.rbxl
 
-# Use sourcemap for preserved stack traces
-rir3 once path/to/script.luau --place path/to/place.rbxl --sourcemap path/to/sourcemap.json
+# With sourcemap (preserves stack traces)
+rir3 once script.luau --place game.rbxl --sourcemap sourcemap.json
 ```
 
-**With sourcemap**: Finds the instance path for your script in the sourcemap, clones the actual ModuleScript from the place file, and executes it. This preserves the real instance path in error stack traces.
+### Serve Mode
 
-**Without sourcemap**: Sends the script source directly through WebSocket for execution in a temporary module.
-
-### Serve Mode (Persistent execution)
-
-For running multiple scripts without restarting Studio. Requires one-time setup.
+For running multiple scripts without restarting Studio.
 
 **Setup** (first time only):
 ```bash
 rir3 build
 ```
 
-**Start server** (terminal 1):
+**Start server**:
 ```bash
 rir3 serve
 ```
 
-The serve command creates a server that routes execution requests to any running Studio instance.
-
-**Execute scripts** (terminal 2):
+**Execute scripts** (in another terminal):
 ```bash
 # Basic execution
-rir3 exec path/to/script.luau
+rir3 exec script.luau
 
-# With sourcemap for preserved stack traces
-rir3 exec path/to/script.luau --sourcemap path/to/sourcemap.json
+# With sourcemap
+rir3 exec script.luau --sourcemap sourcemap.json
 ```
 
-**With sourcemap**: Finds the instance path for your script in the sourcemap for output preservation, sends the source as a fallback if not found.
+### Context Targeting
 
-**Without sourcemap**: Sends the script source directly to the Studio instance for execution.
+Target specific runtime contexts when using serve mode. Running tests in studio will automatically connect VMs, and `exec` will let you target VMs with flags.
+
+```bash
+# Run in Studio edit mode only
+rir3 exec script.luau --studio 1 --running 0
+
+# Run in client only
+rir3 exec script.luau --client 1
+
+# Run in server only
+rir3 exec script.luau --server 1
+
+# Exclude edit mode
+rir3 exec script.luau --edit 0
+```
+
+**Available environments:**
+- `--studio` - Studio environment
+- `--server` - Server runtime
+- `--client` - Client runtime
+- `--edit` - Edit mode (not running)
+- `--running` - Play mode (game running)
+
+Omit a flag to match any value. Use `1` to require it, `0` to exclude it.
 
 ## Features
 
-- **Color-coded output**: Prints, warnings, and errors are color-coded in your terminal
-- **Sourcemap support**: Preserve instance paths in stack traces using Rojo/Argon sourcemaps
-- **Instance cloning**: When using sourcemaps, clones actual ModuleScripts to maintain tree structure
-- **Graceful fallbacks**: Falls back to temporary modules if instance not found
-- **Full Studio API access**: Scripts have complete access to all Studio APIs
+- **Color-coded output** - Prints, warnings, and errors appear in your terminal with colors
+- **Environment targeting** - Route executions to specific runtime contexts (edit/play, client/server)
+- **Sourcemap support** - Preserve stack traces using sourcemaps
+- **Full Studio API** - Scripts have complete access to all Studio APIs.
 
-## Writing Scripts
-
-Scripts execute with full access to Studio APIs:
+## Example Script
 
 ```lua
 print("Hello from Studio!")
@@ -83,5 +88,5 @@ print("Hello from Studio!")
 local part = Instance.new("Part")
 part.Parent = workspace
 
-warn("This is a warning")
+warn("Part created in workspace")
 ```

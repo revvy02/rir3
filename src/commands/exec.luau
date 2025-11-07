@@ -1,15 +1,15 @@
 -- Exec command: Execute script via persistent serve server
 
+local fs = require("@lune/fs")
 local net = require("@lune/net")
 local process = require("@lune/process")
-local fs = require("@lune/fs")
 local serde = require("@lune/serde")
 
 local COLORS = require("../utils/colors")
-local output = require("../utils/output")
-local uuid = require("../utils/uuid")
 local constants = require("../utils/constants")
+local output = require("../utils/output")
 local sourcemap = require("../utils/sourcemap")
+local uuid = require("../utils/uuid")
 
 type Config = {
 	script: string,
@@ -86,14 +86,7 @@ local function identifyClient(ws: any)
 	}))
 end
 
-local function submitScript(
-	ws: any,
-	executionId: string,
-	script: string,
-	instancePath: string?,
-	filterBits: number,
-	filterMask: number
-)
+local function submitScript(ws: any, executionId: string, script: string, instancePath: string?, filterBits: number, filterMask: number)
 	local message: any = {
 		type = "submit",
 		script = script,

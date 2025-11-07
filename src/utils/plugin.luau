@@ -1,6 +1,6 @@
-local process = require("@lune/process")
 local fs = require("@lune/fs")
 local output = require("./output")
+local process = require("@lune/process")
 
 local function buildWithRojo(rojoProjectPath: string, outputPath: string): boolean
 	local result = process.exec("rojo", {

@@ -3,7 +3,6 @@ local serde = require("@lune/serde")
 export type StudioConnection = {
 	ws: any,
 	connected: boolean,
-	activeExecutionId: string?,
 	bitset: number,
 	connectedAt: number,
 
@@ -20,7 +19,6 @@ function StudioConnection.new(ws: any, bitset: number): StudioConnection
 	local self = setmetatable({}, StudioConnection)
 	self.ws = ws
 	self.connected = true
-	self.activeExecutionId = nil
 	self.bitset = bitset
 	self.connectedAt = os.time()
 	return (self :: any) :: StudioConnection

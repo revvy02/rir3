@@ -2,10 +2,9 @@ local serde = require("@lune/serde")
 local stdio = require("@lune/stdio")
 
 local COLORS = require("./colors")
-local constants = require("./constants")
-local output = require("./output")
-local StudioConnection = require("./StudioConnection")
 local ExecConnection = require("./ExecConnection")
+local StudioConnection = require("./StudioConnection")
+local output = require("./output")
 
 type StudioConnection = StudioConnection.StudioConnection
 type ExecConnection = ExecConnection.ExecConnection
@@ -39,26 +38,6 @@ function VmPipeline.new(bitset: number, studioId: string, studio: StudioConnecti
 	return (self :: any) :: VmPipeline
 end
 
-local function formatBitset(bitset: number): string
-	local parts = {}
-	if bit32.band(bitset, bit32.lshift(1, constants.CONTEXT_BITS.isStudio)) ~= 0 then
-		table.insert(parts, "studio")
-	end
-	if bit32.band(bitset, bit32.lshift(1, constants.CONTEXT_BITS.isServer)) ~= 0 then
-		table.insert(parts, "server")
-	end
-	if bit32.band(bitset, bit32.lshift(1, constants.CONTEXT_BITS.isClient)) ~= 0 then
-		table.insert(parts, "client")
-	end
-	if bit32.band(bitset, bit32.lshift(1, constants.CONTEXT_BITS.isEdit)) ~= 0 then
-		table.insert(parts, "edit")
-	end
-	if bit32.band(bitset, bit32.lshift(1, constants.CONTEXT_BITS.isRunning)) ~= 0 then
-		table.insert(parts, "running")
-	end
-	return table.concat(parts, "|")
-end
-
 local function processQueue(self: VmPipeline)
 	if #self.execQueue == 0 then
 		return
@@ -75,8 +54,6 @@ local function processQueue(self: VmPipeline)
 
 	-- Set as active execution
 	self.activeExecution = exec
-	exec.assignedStudio = self.studioId
-	self.studio.activeExecutionId = exec.executionId
 
 	stdio.write(`Execution started: {output.formatShortLog(self.studioId, self.bitset, exec.executionId)}\n`)
 
@@ -118,7 +95,6 @@ function VmPipeline:completeExecution(executionId: string)
 
 	-- Clear active execution
 	self.activeExecution = nil
-	self.studio.activeExecutionId = nil
 
 	-- Process next in queue
 	processQueue(self)
