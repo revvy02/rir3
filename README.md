@@ -2,6 +2,12 @@
 
 Execute Luau scripts in Roblox Studio from your terminal.
 
+## Installation
+
+```bash
+pesde add rvy/rir3
+```
+
 ## Overview
 
 Run scripts in Roblox Studio and see output in your terminal with color-coded prints, warnings, and errors. Uses WebSockets for communication between CLI and Studio.
