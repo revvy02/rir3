@@ -17,6 +17,7 @@ type Config = {
 	sourcemap: string?,
 	outputFile: string?,
 	returnFile: string?,
+	showReturn: boolean?,
 	filterBits: number,
 	filterMask: number,
 	logFilter: execution.LogFilter,
@@ -74,6 +75,7 @@ local function parseArguments(args: any): Config
 		sourcemap = args.sourcemap,
 		outputFile = args.output,
 		returnFile = args["return"],
+		showReturn = args.show_return,
 		filterBits = filterBits,
 		filterMask = filterMask,
 		logFilter = execution.buildLogFilter(args),
@@ -137,7 +139,7 @@ local function submitScript(ws: any, executionId: string, script: string, instan
 	ws:send(serde.encode("json", message))
 end
 
-local function handleMessage(decoded: any, exitCodeRef: { value: number }, outputFile: string?, returnFile: string?): boolean
+local function handleMessage(decoded: any, exitCodeRef: { value: number }, outputFile: string?, returnFile: string?, showReturn: boolean?): boolean
 	if decoded.type == "queued" then
 		if decoded.waiting then
 			stdio.write(colors.cyan(`Waiting: {decoded.waiting}`) .. "\n")
@@ -153,7 +155,7 @@ local function handleMessage(decoded: any, exitCodeRef: { value: number }, outpu
 		end
 	elseif decoded.type == "done" then
 		if decoded.result then
-			execution.writeExecutionResult(decoded.result, returnFile)
+			execution.writeExecutionResult(decoded.result, returnFile, showReturn)
 		end
 		return true
 	elseif decoded.type == "disconnect" then
@@ -190,7 +192,7 @@ local function main(args: any)
 		end
 
 		local decoded = serde.decode("json", message)
-		local isDone = handleMessage(decoded, exitCodeRef, config.outputFile, config.returnFile)
+		local isDone = handleMessage(decoded, exitCodeRef, config.outputFile, config.returnFile, config.showReturn)
 
 		if isDone then
 			ws:close()

@@ -79,6 +79,26 @@ rir3 exec script.luau --edit 0
 
 Omit a flag to match any value. Use `1` to require it, `0` to exclude it.
 
+### Output Redirection
+
+Redirect execution output and return values to files:
+
+```bash
+# Save execution output (prints/logs) to file
+rir3 once script.luau --output output.txt
+
+# Save return value to file
+rir3 exec script.luau --return result.json
+
+# Save both to different files
+rir3 once script.luau --output output.txt --return result.json
+```
+
+**Available flags:**
+- `--output <path>` - Write execution output (prints/logs) to file instead of stdout
+- `--return <path>` - Write return value to file (can be combined with `--show-return`)
+- `--show-return` - Print return value to stdout (see [Return Values](#return-values))
+
 ### Log Filtering
 
 Control which logs are shown in your terminal:
@@ -106,11 +126,23 @@ rir3 exec script.luau --no-logs
 
 ### Return Values
 
-Scripts can return values that will be printed to stdout:
+Scripts can return values. By default, return values are silent (not printed), but you can:
+- Print them to stdout with `--show-return`
+- Save them to a file with `--return <path>`
+- Do both simultaneously
 
 ```bash
-# Capture return value
-result=$(rir3 once script.luau --no-logs)
+# Print return value to stdout
+rir3 once script.luau --show-return
+
+# Save return value to file
+rir3 exec script.luau --return result.json
+
+# Both: save to file AND print to stdout
+rir3 once script.luau --return result.json --show-return
+
+# Capture return value in shell (with --show-return)
+result=$(rir3 once script.luau --no-logs --show-return)
 echo "Result: $result"
 ```
 
@@ -125,7 +157,7 @@ end
 return { sum = sum, count = 100 }
 ```
 
-**Output:**
+**Output (with `--show-return`):**
 ```
 {"sum":5050,"count":100}
 ```

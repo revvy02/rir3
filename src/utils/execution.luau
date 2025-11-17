@@ -79,10 +79,12 @@ local function writeExecutionOutput(text: string, outputFile: string?)
 end
 
 -- Write execution result (return value JSON) to file or stdout
-local function writeExecutionResult(result: string, returnFile: string?)
+local function writeExecutionResult(result: string, returnFile: string?, showReturn: boolean?)
 	if returnFile then
 		fs.writeFile(returnFile, result)
-	else
+	end
+
+	if showReturn then
 		stdio.write(result)
 		stdio.write("\n")
 	end
