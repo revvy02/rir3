@@ -15,7 +15,6 @@ export type VmPipeline = {
 	studio: StudioConnection,
 	execQueue: { ExecConnection },
 	activeExecution: ExecConnection?,
-	completedExecutions: { [string]: { connection: ExecConnection, timestamp: number } },
 
 	new: (bitset: number, studioId: string, studio: StudioConnection) -> VmPipeline,
 	enqueue: (self: VmPipeline, exec: ExecConnection) -> (),
@@ -36,7 +35,6 @@ function VmPipeline.new(bitset: number, studioId: string, studio: StudioConnecti
 	self.studio = studio
 	self.execQueue = {}
 	self.activeExecution = nil
-	self.completedExecutions = {}
 	return (self :: any) :: VmPipeline
 end
 
@@ -97,22 +95,8 @@ function VmPipeline:completeExecution(executionId: string)
 
 	stdio.write(`Execution complete: {output.formatShortLog(self.studioId, self.bitset, executionId)}\n`)
 
-	-- Store completed execution for late-arriving messages
-	local currentTime = os.time()
-	self.completedExecutions[executionId] = {
-		connection = self.activeExecution,
-		timestamp = currentTime,
-	}
-
 	-- Clear active execution
 	self.activeExecution = nil
-
-	-- Clean up old completed executions (older than 2 seconds)
-	for id, data in pairs(self.completedExecutions) do
-		if currentTime - data.timestamp > 2 then
-			self.completedExecutions[id] = nil
-		end
-	end
 
 	-- Process next in queue
 	processQueue(self)
@@ -123,13 +107,6 @@ function VmPipeline:forwardOutput(executionId: string, message: string)
 	if self.activeExecution and self.activeExecution.executionId == executionId then
 		local e = self.activeExecution :: ExecConnection
 		e:send(message)
-		return
-	end
-
-	-- Check if this is a recently completed execution (late-arriving output)
-	local completed = self.completedExecutions[executionId]
-	if completed then
-		completed.connection:send(message)
 	end
 end
 
