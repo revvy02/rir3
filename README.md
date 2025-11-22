@@ -207,14 +207,7 @@ This default behavior is ideal for development, ensuring executions always refle
 rodeo exec script.luau --cache-requires
 ```
 
-## Output Examples
-
-### Benchmarks
-<p align="center">
-  <img src="demo/image2.png" width="70%" />
-</p>
-
-### Demo
+## Output Example
 <p align="center">
   <img src="demo/image1.png" width="100%" />
 </p>
