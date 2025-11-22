@@ -5,8 +5,22 @@ execution to running studio instances via websockets.
 
 ## Installation
 
+### via pesde
+
 ```bash
 pesde add rvy/rodeo
+```
+
+### via mise
+
+```bash
+mise use ubi:revvy02/rodeo
+```
+
+### via rokit
+
+```bash
+rokit add revvy02/rodeo
 ```
 
 ## Overview
@@ -209,3 +223,15 @@ part.Parent = workspace
 
 warn("Part created in workspace")
 ```
+
+## Output Examples
+
+### Benchmarks
+<p align="center">
+  <img src="demo/image2.png" width="70%" />
+</p>
+
+### Demo
+<p align="center">
+  <img src="demo/image1.png" width="100%" />
+</p>
