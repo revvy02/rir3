@@ -11,8 +11,8 @@ local task = require("@lune/task")
 
 local colors = require("../utils/colors")
 local constants = require("../utils/constants")
+local embeddedPlugins = require("../utils/embedded_plugins")
 local execution = require("../utils/execution")
-local plugin = require("../utils/plugin")
 local uuid = require("../utils/uuid")
 
 type Config = {
@@ -164,7 +164,6 @@ local function main(args: any)
 	local scriptContent = execution.readScriptContent(config.scriptPath, config.scriptSource)
 	local executionId = uuid.generate()
 	local pluginPath = `{roblox.studioPluginPath()}/rodeo-once.rbxmx`
-	local rojoProjectPath = pathfs.absolute(_G.PESDE_ROOT .. "/plugins/once/plugin.project.json"):toString()
 
 	local placeToOpen = config.place
 	local tempPlacePath = nil
@@ -190,7 +189,8 @@ local function main(args: any)
 		placeToOpen = tempPlacePath
 	end
 
-	plugin.generatePluginFile(pluginPath, rojoProjectPath)
+	-- Write embedded plugin to Studio plugins directory
+	embeddedPlugins.writeOncePlugin(pluginPath)
 
 	local instancePath = execution.resolveInstancePath(config.sourcemap, config.scriptPath)
 
