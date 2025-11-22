@@ -6,5 +6,6 @@
 /build
 /.claude
 /.vscode
+/.rodeo
 
 .DS_Store
